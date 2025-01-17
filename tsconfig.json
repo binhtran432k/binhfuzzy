@@ -1,0 +1,12 @@
+{
+	"extends": ["./tsconfig.share.jsonc"],
+	"compilerOptions": {
+    "declaration": true,
+    "isolatedDeclarations": true,
+		"baseUrl": ".",
+		"paths": {
+			"~/*": ["src/*"]
+		}
+	},
+	"include": ["src"]
+}

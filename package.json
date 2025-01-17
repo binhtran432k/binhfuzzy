@@ -1,0 +1,18 @@
+{
+	"name": "fuzzyradix",
+	"version": "0.0.0",
+	"type": "module",
+	"exports": {
+		"./fuzzy": "./dist/fuzzy-radix/fuzzy.js"
+	},
+	"workspaces": ["www"],
+	"scripts": {
+		"lint": "biome check",
+		"lint:fix": "biome check --unsafe --write",
+		"gen": "bun scripts/gen.ts"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"oxc-transform": "^0.46.0"
+	}
+}

@@ -1,0 +1,16 @@
+{
+	"name": "fuzzyradix-www",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"gen": "bun src/index.ts",
+		"dev": "bun src/index.ts --dev"
+	},
+	"devDependencies": {
+		"@types/bun": "*",
+		"binhvan": "^0.0.3",
+		"fuzzyradix": "..",
+		"mini-van-plate": "^0.6.1",
+		"vanjs-core": "^1.5.3"
+	}
+}
