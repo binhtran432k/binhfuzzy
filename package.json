@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"type": "module",
 	"exports": {
-		"./fuzzy": "./dist/fuzzy-radix/fuzzy.js"
+		"./fuzzy": "./dist/fuzzyradix/fuzzy.js"
 	},
 	"workspaces": ["www"],
 	"scripts": {
