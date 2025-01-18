@@ -1,14 +1,19 @@
-const SCORE_MIN: number = Number.NEGATIVE_INFINITY;
-const SCORE_MAX: number = Number.POSITIVE_INFINITY;
+const SCORE_MIN: number = -127;
+const SCORE_MAX: number = 127;
 
-const SCORE_GAP_LEADING = -0.005;
-const SCORE_GAP_TRAILING = -0.005;
-const SCORE_GAP_INNER = -0.01;
-const SCORE_MATCH_CONSECUTIVE = 1.0;
-const SCORE_MATCH_SLASH = 0.9;
-const SCORE_MATCH_WORD = 0.8;
-const SCORE_MATCH_CAPITAL = 0.7;
-const SCORE_MATCH_DOT = 0.6;
+const SCORE_GAP_LEADING = -0.05;
+const SCORE_GAP_TRAILING = -0.05;
+const SCORE_GAP_INNER = -0.1;
+const SCORE_MATCH_CONSECUTIVE = 10;
+const SCORE_MATCH_SLASH = 9;
+const SCORE_MATCH_WORD = 8;
+const SCORE_MATCH_CAPITAL = 7;
+const SCORE_MATCH_DOT = 6;
+
+type ScoreArray = Int8Array;
+const ScoreArray = Int8Array;
+type BonusArray = Int8Array;
+const BonusArray = Int8Array;
 
 export function search(needle: string, haystacks: string[]): string[] {
 	return haystacks
@@ -52,17 +57,17 @@ function score(needle: string, haystack: string): number {
 		return SCORE_MIN;
 	}
 
-	const D = create2dArray(n, m);
-	const M = create2dArray(n, m);
+	const D = createScoreMatrix(n, m);
+	const M = createScoreMatrix(n, m);
 	compute(needle, haystack, D, M);
 
 	return M[n - 1][m - 1];
 }
 
-function create2dArray(n: number, m: number): Int32Array[] {
+function createScoreMatrix(n: number, m: number): ScoreArray[] {
 	const rtArr = new Array(n);
 	for (let i = 0; i < rtArr.length; i++) {
-		rtArr[i] = new Int32Array(m);
+		rtArr[i] = new ScoreArray(m);
 	}
 	return rtArr;
 }
@@ -75,9 +80,9 @@ function isUpper(s: string) {
 	return s.toUpperCase() === s;
 }
 
-function precomputeBonuses(haystack: string): Int32Array {
+function precomputeBonuses(haystack: string): BonusArray {
 	/* Which positions are beginning of words */
-	const matchBonuses = new Int32Array(haystack.length);
+	const matchBonuses = new BonusArray(haystack.length);
 
 	let lastChar = "/";
 	for (let i = 0; i < haystack.length; i++) {
@@ -104,8 +109,8 @@ function precomputeBonuses(haystack: string): Int32Array {
 function compute(
 	needle: string,
 	haystack: string,
-	D: Int32Array[],
-	M: Int32Array[],
+	D: ScoreArray[],
+	M: ScoreArray[],
 ): void {
 	const n = needle.length;
 	const m = haystack.length;
@@ -138,12 +143,16 @@ function compute(
 						D[i - 1][j - 1] + SCORE_MATCH_CONSECUTIVE,
 					);
 				}
-				D[i][j] = score;
-				M[i][j] = prev_score = Math.max(score, prev_score + gap_score);
+				D[i][j] = Math.min(Math.max(SCORE_MIN, Math.trunc(score)), SCORE_MAX);
+				prev_score = Math.max(score, prev_score + gap_score);
 			} else {
 				D[i][j] = SCORE_MIN;
-				M[i][j] = prev_score = prev_score + gap_score;
+				prev_score = prev_score + gap_score;
 			}
+			M[i][j] = Math.min(
+				Math.max(SCORE_MIN, Math.trunc(prev_score)),
+				SCORE_MAX,
+			);
 		}
 	}
 }
