@@ -1,6 +1,6 @@
 import { env } from "mini-van-plate/shared";
 import type { Van } from "vanjs-core";
-import { search } from "fuzzyradix/fuzzy";
+import { hasMatch, computeScore } from "fuzzyradix/fuzzy";
 
 const Search = () => {
 	const { div, input, ul, li } = env.van.tags;
@@ -19,7 +19,10 @@ const Search = () => {
 
 	const matchedItems = env.van.derive(() => {
 		const t1 = performance.now();
-		const rt = search(searchText.val, items.val);
+		const rt = items.val
+			.filter((x) => hasMatch(searchText.val, x))
+			.map((x) => [x, computeScore(searchText.val, x)] as [string, number])
+			.sort(([, a], [, b]) => b - a);
 		const t2 = performance.now();
 		searchTime.val = t2 - t1;
 		return rt;
@@ -42,7 +45,7 @@ const Search = () => {
 		}),
 		div(searchText),
 		() => div(`Matched ${matchedItems.val.length} in ${searchTime.val}ms`),
-		() => ul(matchedItems.val.slice(0, 100).map((x) => li(x))),
+		() => ul(matchedItems.val.slice(0, 100).map(([x, c]) => li(`${c} - ${x}`))),
 	);
 };
 
