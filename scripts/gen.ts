@@ -34,7 +34,7 @@ function getDtsBunPlugin(): BunPlugin {
 async function main() {
 	await Bun.$`rm -rf dist`;
 	const result = await Bun.build({
-		entrypoints: ["src/fuzzyradix/fuzzy.ts"],
+		entrypoints: ["src/index.ts"],
 		root: "src",
 		outdir: "dist",
 		minify: true,

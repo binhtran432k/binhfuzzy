@@ -1,15 +1,19 @@
 {
-	"name": "fuzzyradix",
+	"name": "binhfuzzy",
 	"version": "0.0.0",
 	"type": "module",
 	"exports": {
-		"./fuzzy": "./dist/fuzzyradix/fuzzy.js"
+		".": "./dist/index.js"
 	},
-	"workspaces": ["www"],
+	"workspaces": ["demo"],
 	"scripts": {
 		"lint": "biome check",
 		"lint:fix": "biome check --unsafe --write",
-		"gen": "bun scripts/gen.ts"
+		"gen": "bun scripts/gen.ts",
+    "predev:demo": "bun gen",
+		"dev:demo": "bun --cwd demo dev",
+    "pregen:demo": "bun gen",
+		"gen:demo": "bun --cwd demo gen"
 	},
 	"devDependencies": {
 		"@types/bun": "latest",
