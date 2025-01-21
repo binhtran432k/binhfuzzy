@@ -1,4 +1,11 @@
-import { computeScore, computeScoreWithPositions, hasMatch } from "binhfuzzy";
+import {
+	type BonusArray,
+	checkMatch,
+	computeScore,
+	computeScoreWithPositions,
+	normalizeTextSimple,
+	computeBonusesSimple,
+} from "binhfuzzy";
 import { env } from "mini-van-plate/shared";
 import type { Van } from "vanjs-core";
 
@@ -10,7 +17,11 @@ const Search = () => {
 
 	const searchText = env.van.state("");
 	const searchTime = env.van.state(0);
-	const searchData = env.van.state<string[]>([]);
+	const searchData = env.van.state<{
+		haystacks: string[];
+		normalizedHaystacks: string[];
+		bonusesList: BonusArray[];
+	} | null>(null);
 
 	let time: Timer | undefined;
 	const handleInput = (e: Event) => {
@@ -22,37 +33,47 @@ const Search = () => {
 
 	const matchedItems = env.van.derive<[splits: string[], score: number][]>(
 		() => {
-			if (searchData.val) {
+			const searchDataVal = searchData.val;
+			if (searchDataVal) {
 				const t1 = performance.now();
-				const allMatches = searchData.val
-					.filter((x) => hasMatch(searchText.val, x))
-					.map((haystack) => {
-						return [haystack, computeScore(searchText.val, haystack)] as [
-							string,
-							number,
-						];
+				const normalizedNeedle = normalizeTextSimple(searchText.val);
+				const allMatches = [...new Array(searchDataVal.haystacks.length)]
+					.map((_, i) => i)
+					.filter((i) =>
+						checkMatch(normalizedNeedle, searchDataVal.normalizedHaystacks[i]),
+					)
+					.map((i) => {
+						return [
+							i,
+							computeScore(
+								normalizedNeedle,
+								searchDataVal.normalizedHaystacks[i],
+								searchDataVal.bonusesList[i],
+							),
+						] as [number, number];
 					})
 					.sort(([, a], [, b]) => b - a);
 				const matches = allMatches
-					.slice(0, 1e3)
-					.map(([haystack]) => {
-						const positions = new PositionArray(searchText.val.length);
+					.slice(0, 1e2)
+					.map(([i]) => {
+						const positions = new PositionArray(normalizedNeedle.length);
 						const score = computeScoreWithPositions(
-							searchText.val,
-							haystack,
+							normalizedNeedle,
+							searchDataVal.normalizedHaystacks[i],
+							searchDataVal.bonusesList[i],
 							positions,
 						);
-						return [splitByPositions(haystack, positions), score] as [
-							string[],
-							number,
-						];
+						return [
+							splitByPositions(searchDataVal.haystacks[i], positions),
+							score,
+						] as [string[], number];
 					})
 					.concat(
 						allMatches
-							.slice(1e3)
+							.slice(1e2)
 							.map(
-								([haystack, score]) =>
-									[[haystack], score] as [string[], number],
+								([i, score]) =>
+									[[searchDataVal.haystacks[i]], score] as [string[], number],
 							),
 					);
 				const t2 = performance.now();
@@ -68,7 +89,11 @@ const Search = () => {
 			const data = await fetch("data/test.json");
 			const json = await data.json();
 			const searchs: string[] = json;
-			searchData.val = searchs;
+			searchData.val = {
+				haystacks: searchs,
+				normalizedHaystacks: searchs.map(normalizeTextSimple),
+				bonusesList: searchs.map(computeBonusesSimple),
+			};
 		}
 	});
 

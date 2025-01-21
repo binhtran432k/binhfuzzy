@@ -1,36 +1,39 @@
-const SCORE_MIN: number = 0;
-const SCORE_MAX: number = 65_535;
+import { getMacroValue } from "./index.macro" with { type: "macro" };
 
-const SCORE_GAP_LEADING = -0.5;
-const SCORE_GAP_TRAILING = -0.5;
-const SCORE_GAP_INNER = -1;
-const SCORE_MATCH_CONSECUTIVE = 100;
-const SCORE_MATCH_SLASH = 90;
-const SCORE_MATCH_WORD = 80;
-const SCORE_MATCH_CAPITAL = 70;
-const SCORE_MATCH_DOT = 60;
+export const SCORE_MIN: number = getMacroValue("ScoreMin");
+export const SCORE_MAX: number = getMacroValue("ScoreMax");
 
-const OUT_OF_SCORE_SIZE = 1024;
-const SCORE_BASE = 512 + 1;
+export const SCORE_MATCH_CONSECUTIVE: number = getMacroValue(
+	"ScoreMatchConsecutive",
+);
+export const SCORE_MATCH_SLASH: number = getMacroValue("ScoreMatchSlash");
+export const SCORE_MATCH_WORD: number = getMacroValue("ScoreMatchWord");
+export const SCORE_MATCH_CAPITAL: number = getMacroValue("ScoreMatchCapital");
+export const SCORE_MATCH_DOT: number = getMacroValue("ScoreMatchDot");
 
-const ScoreArray = Uint16Array;
-const BonusArray = Uint8Array;
-type ScoreArray = typeof ScoreArray.prototype;
-type BonusArray = typeof BonusArray.prototype;
+export const ScoreArray: Uint16ArrayConstructor = Uint16Array;
+export const BonusArray: Uint8ArrayConstructor = Uint8Array;
+export type ScoreArray = typeof ScoreArray.prototype;
+export type BonusArray = typeof BonusArray.prototype;
 
-export function hasMatch(needle: string, haystack: string): boolean {
-	const lowerNeedle = needle.toLowerCase();
-	const lowerHaystack = haystack.toLowerCase();
-	for (let i = 0, j = 0; i < lowerNeedle.length; i++) {
-		j = lowerHaystack.indexOf(lowerNeedle[i], j) + 1;
+export function checkMatch(
+	normalizedNeedle: string,
+	normalizedHaystack: string,
+): boolean {
+	for (let i = 0, j = 0; i < normalizedNeedle.length; i++) {
+		j = normalizedHaystack.indexOf(normalizedNeedle[i], j) + 1;
 		if (j === 0) return false;
 	}
 	return true;
 }
 
-export function computeScore(needle: string, haystack: string): number {
-	const n = needle.length;
-	const m = haystack.length;
+export function computeScore(
+	normalizedNeedle: string,
+	normalizedHaystack: string,
+	matchBonuses: BonusArray,
+): number {
+	const n = normalizedNeedle.length;
+	const m = normalizedHaystack.length;
 
 	if (!n || !m) return SCORE_MIN;
 
@@ -41,17 +44,12 @@ export function computeScore(needle: string, haystack: string): number {
 		return SCORE_MAX;
 	}
 
-	if (m > OUT_OF_SCORE_SIZE) {
+	if (m > getMacroValue("BoundOutOfScore")) {
 		// Unreasonably large candidate: return no score
 		// If it is a valid match it will still be returned, it will
 		// just be ranked below any reasonably sized candidates
 		return SCORE_MIN;
 	}
-
-	const normalizedNeedle = needle.toLowerCase();
-	const normalizedHaystack = haystack.toLowerCase();
-
-	const matchBonuses = precomputeBonuses(haystack);
 
 	const bestScores = new ScoreArray(m);
 	const bestMatchScores = new ScoreArray(m);
@@ -75,30 +73,26 @@ export function computeScore(needle: string, haystack: string): number {
 }
 
 export function computeScoreWithPositions(
-	needle: string,
-	haystack: string,
+	normalizedNeedle: string,
+	normalizedHaystack: string,
+	matchBonuses: BonusArray,
 	positions: { [x: number]: number },
 ): number {
-	const n = needle.length;
-	const m = haystack.length;
+	const n = normalizedNeedle.length;
+	const m = normalizedHaystack.length;
 
 	if (!n || !m) return SCORE_MIN;
 
 	if (n === m) {
 		for (let i = 0; i < n; i++) {
-			positions[i] = i + 1;
+			positions[i] = 1 + i;
 		}
 		return SCORE_MAX;
 	}
 
-	if (m > OUT_OF_SCORE_SIZE) {
+	if (m > getMacroValue("BoundOutOfScore")) {
 		return SCORE_MIN;
 	}
-
-	const normalizedNeedle = needle.toLowerCase();
-	const normalizedHaystack = haystack.toLowerCase();
-
-	const matchBonuses = precomputeBonuses(haystack);
 
 	const bestScoreMatrix = createScoreMatrix(n, m);
 	const bestMatchScoreMatrix = createScoreMatrix(n, m);
@@ -161,7 +155,11 @@ export function computeScoreWithPositions(
 	return bestScoreMatrix[n - 1][m - 1];
 }
 
-function precomputeBonuses(haystack: string): BonusArray {
+export function normalizeTextSimple(text: string): string {
+	return text.toLowerCase();
+}
+
+export function computeBonusesSimple(haystack: string): BonusArray {
 	// Which positions are beginning of words
 	const matchBonuses = new BonusArray(haystack.length);
 
@@ -208,7 +206,10 @@ function computeRow(
 	lastBestScores: ScoreArray,
 	lastBestMatchScores: ScoreArray,
 ) {
-	const gapScore = i === n - 1 ? SCORE_GAP_TRAILING : SCORE_GAP_INNER;
+	const gapScore =
+		i === n - 1
+			? getMacroValue("ScoreGapTrailing")
+			: getMacroValue("ScoreGapInner");
 	let prevScore = SCORE_MIN;
 
 	let prevBestScore = 0;
@@ -218,7 +219,10 @@ function computeRow(
 		if (normalizedNeedle[i] === normalizedHaystack[j]) {
 			let score = SCORE_MIN;
 			if (i === 0) {
-				score = j * SCORE_GAP_LEADING + matchBonuses[j] + SCORE_BASE;
+				score =
+					j * getMacroValue("ScoreGapLeading") +
+					matchBonuses[j] +
+					getMacroValue("ScoreBase");
 			} else if (j > 0) {
 				// i > 0 && j > 0
 				score = Math.max(
