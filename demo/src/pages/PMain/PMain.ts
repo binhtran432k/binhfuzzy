@@ -1,5 +1,5 @@
-import { LBinhVan } from "binhvan/layouts";
 import type { BinhVanPageFn } from "binhvan";
+import { LBinhVan } from "binhvan/layouts";
 import Search from "~/components/Search/Search";
 
 const PMain: BinhVanPageFn = (van) => {

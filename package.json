@@ -10,9 +10,9 @@
 		"lint": "biome check",
 		"lint:fix": "biome check --unsafe --write",
 		"gen": "bun scripts/gen.ts",
-    "predev:demo": "bun gen",
+		"predev:demo": "bun gen",
 		"dev:demo": "bun --cwd demo dev",
-    "pregen:demo": "bun gen",
+		"pregen:demo": "bun gen",
 		"gen:demo": "bun --cwd demo gen"
 	},
 	"devDependencies": {

@@ -1,10 +1,10 @@
 import {
 	type BonusArray,
 	checkMatch,
+	computeBonusesSimple,
 	computeScore,
 	computeScoreWithPositions,
 	normalizeTextSimple,
-	computeBonusesSimple,
 } from "binhfuzzy";
 import { env } from "mini-van-plate/shared";
 import type { Van } from "vanjs-core";
